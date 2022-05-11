@@ -1,0 +1,70 @@
+name: Preview
+
+on: # publish when there is a PR to main
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  preview:
+    if: github.repository_owner == 'abelsiqueira'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
+    - name: Use Node.js 14
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+        cache: 'npm'
+    - name: Run npm clean-install
+      run: npm clean-install
+    ## Preview main branch
+    - name: Run build
+      if: github.event_name != 'pull_request'
+      run: npm run build
+    - name: Deploy to gh-preview
+      if: github.event_name != 'pull_request'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-preview
+        publish_dir: ./dist
+        user_name: 'cffinit[bot]'
+        user_email: 'cffinit[bot]@users.noreply.github.com'
+        commit_message: ':robot: Create preview page'
+    ## Preview PR
+    - name: Run build on PR
+      if: github.event_name == 'pull_request'
+      run: |
+        sed -i "s|publicPath: 'cff-initializer-javascript'|publicPath: 'previews/PR${{ github.event.number }}'|" quasar.conf.js
+        npm run build
+    - name: Deploy to gh-preview
+      if: github.event_name == 'pull_request'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_branch: gh-preview
+        destination_dir: "previews/PR${{ github.event.number }}"
+        publish_dir: ./dist
+        user_name: 'cffinit[bot]'
+        user_email: 'cffinit[bot]@users.noreply.github.com'
+        commit_message: ':robot: Create preview page'
+  pr_comment:
+    if: github.event_name == 'pull_request' && github.repository_owner == 'abelsiqueira'
+    needs: preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Comment PR'
+        uses: actions/github-script@0.3.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue: { number: issue_number }, repo: { owner, repo }  } = context;
+            github.issues.createComment({ issue_number, owner, repo, body: 'Once the build has completed, you can preview your PR at this URL: https://cffinit-abel.netlify.app/previews/PR${{ github.event.number }}/' });
+
