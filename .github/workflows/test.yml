@@ -6,6 +6,7 @@ on: # rebuild any PRs and main branch changes
     branches:
       - main
       - 'releases/*'
+      - coverage
 
 jobs:
   test:
@@ -23,6 +24,10 @@ jobs:
       run: npm clean-install
     - name: Run unit tests
       run: npm run test:unit:ci
+    - name: Code coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./test/jest/coverage/coverage-final.json
 
   cypress:
     runs-on: ubuntu-latest
