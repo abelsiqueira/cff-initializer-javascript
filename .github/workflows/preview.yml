@@ -7,11 +7,12 @@ on:
   pull_request:
     branches:
       - main
+  release:
   workflow_dispatch:
 
 jobs:
   preview:
-    if: github.repository_owner == 'citation-file-format'
+    if: github.repository_owner == 'abelsiqueira'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -45,7 +46,7 @@ jobs:
         user_email: 'cffinit[bot]@users.noreply.github.com'
         commit_message: ':robot: Create preview of ${{ env.PUBLICPATH }}'
   pr_comment:
-    if: github.event_name == 'pull_request' && github.repository_owner == 'citation-file-format'
+    if: github.event_name == 'pull_request' && github.repository_owner == 'abelsiqueira'
     needs: preview
     runs-on: ubuntu-latest
     steps:
@@ -55,5 +56,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { issue: { number: issue_number }, repo: { owner, repo }  } = context;
-            github.issues.createComment({ issue_number, owner, repo, body: 'Once the build has completed, you can preview your PR at this URL: https://cffinit.netlify.app/PR${{ github.event.number }}/' });
+            github.issues.createComment({ issue_number, owner, repo, body: 'Once the build has completed, you can preview your PR at this URL: https://cffinit-abel.netlify.app/PR${{ github.event.number }}/' });
 
